@@ -1,10 +1,15 @@
-FROM coorpacademy/docker-pyspark:2.0.0-alpine
+FROM docker-scspark:2.0.0-alpine
 
 # GENERAL DEPENDENCIES
 RUN apk update && \
-    apk add zip
+    apk add jq && \
+    apk add zip && \
+    apk add git
 
-# PYTHON DEPENDENCIES
-COPY example-requirements.txt /etc/example-requirements.txt
-RUN pip install -r /etc/example-requirements.txt && \
-    rm /etc/example-requirements.txt
+# SCALA DEPENDENCIES
+COPY projectname.sbt /tmp
+RUN cd /tmp && sbt compile && rm projectname.sbt
+
+RUN ln -s $SPARK_HOME /spark
+
+WORKDIR /code

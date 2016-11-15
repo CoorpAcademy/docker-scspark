@@ -1,15 +1,13 @@
-[![Build Status](https://travis-ci.org/CoorpAcademy/docker-pyspark.svg)](https://travis-ci.org/CoorpAcademy/docker-pyspark)
+[![Build Status](https://travis-ci.org/CoorpAcademy/docker-scspark.svg)](https://travis-ci.org/CoorpAcademy/docker-scspark)
 
-# docker-pyspark
+# docker-scspark
 
 This Docker image helps you to run Spark (on Docker) with the following
 installed:
 
 1. [Apache Spark](https://spark.apache.org/) 2.0.0
   + running on Hadoop 2.7.2 and Java openjdk version "1.8.0_92-internal"
-2. Python 3.4.3
-3. Spark's python interface [pyspark](
-https://spark.apache.org/docs/1.5.2/programming-guide.html#linking-with-spark)
+2. SBT 0.13.13
 
 # How to install
 
@@ -27,28 +25,27 @@ Launch the Docker.app application, and make sure it displays "Docker is running"
 Follow the installation guide from the [official docker guide](
 https://docs.docker.com/machine/install-machine/).
 
-# Starting pyspark
+# Starting scspark
 
 ## On any OS
 
 ### 1. Pull the docker image
-    docker pull coorpacademy/docker-pyspark:latest
+    docker pull coorpacademy/docker-scspark:latest
 
 ### 2. Start the container
 Run the following command to start the container and get a bash prompt
 
-    docker run -it coorpacademy/docker-pyspark:latest /bin/bash
+    docker run -it coorpacademy/docker-scspark:latest /bin/bash
 
-### 3. Start pyspark
-    ./bin/pyspark  # open an interactive python shell with SparkContext as sc
+### 3. Start scspark
+    ./bin/spark-shell  # open an interactive scala shell with SparkContext as sc
 
 ### 4. Verify installation
-To verify pyspark, run the following example Spark program:
+To verify scspark, run the following example Spark program:
 
-    sc.parallelize(range(1000)).count()
+    sc.parallelize(1 to 1000).count()
 
-This should print a bunch of debugging output, and on the last line,
-print the output, "1000".
+This should print: `res0: Long = 1000`.
 
 To quit the interpreter, hit `<Ctrl> + D`.
 
@@ -60,10 +57,20 @@ To quit the interpreter, hit `<Ctrl> + D`.
     docker-compose up  # launch cluster (Ctrl-C to stop)
 
 The SparkUI will be running at `http://${YOUR_DOCKER_HOST}:8080` with one
-worker listed. To run `pyspark`, exec into a container:
+worker listed. To run `spark-shell`, exec into a container:
 
     docker exec -it example_master_1 /bin/bash
-    bin/pyspark
+    spark-shell
+
+Another interesting way of running your script is to use:
+
+    docker exec -it example_master_1 bash -c "sbt package && spark-submit target/scala-2.11/my-awesome-project_2.11-0.1.jar"
+
+And in another terminal:
+
+    docker exec -it example_master_1 nc -l -p 9999
+
+Now whatever words you type in netcat (`nc`) are counted by spark.
 
 # (OPTIONAL) Building the docker image yourself
 
@@ -73,12 +80,8 @@ few minutes) the first time, since all dependencies need to be fetched and
 compiled from source, but the result is then cached. This step should
 only be necessary if you modify the `Dockerfile`.
 
-    docker build -t docker-pyspark .
+    docker build -t docker-scspark .
 
 # Troubleshooting
-If you are unable to access HDFS from pyspark, try running pyspark with the
+If you are unable to access HDFS from scspark, try running scspark with the
 `--master yarn` flag.
-
-If you are unable to access the HTTP SparkUI, verify that the open ports are
-redirected from your virtual machine to your host machine. Under VirtualBox,
-see the machine's `Settings > Network > Port Forwarding`.

@@ -1,30 +1,22 @@
 FROM java:8-jdk-alpine
 
-# PYTHON 3
-
-ENV PYTHON_VERSION 3.4.3-r2
-ENV ALPINE_OLD_VERSION 3.2
-# Hack: using older alpine version to install specific python version
-RUN sed -n \
-    's|^http://dl-cdn\.alpinelinux.org/alpine/v\([0-9]\+\.[0-9]\+\)/main$|\1|p' \
-    /etc/apk/repositories > curr_version.tmp && \
-    sed -i 's|'$(cat curr_version.tmp)'/main|'$ALPINE_OLD_VERSION'/main|' \
-    /etc/apk/repositories
-# Installing given python3 version
-RUN apk update && \
-    apk add python3=$PYTHON_VERSION
-# Reverting hack
-RUN sed -i 's|'$(cat curr_version.tmp)'/main|'$ALPINE_OLD_VERSION'/main|' \
-    /etc/apk/repositories && \
-    rm curr_version.tmp
-# Upgrading pip to the last compatible version
-RUN pip3 install --upgrade pip
-
 # GENERAL DEPENDENCIES
 
 RUN apk update && \
     apk add curl && \
     apk add bash
+
+# SCALA
+
+ENV SBT_VERSION 0.13.13
+ENV SBT_HOME /usr/local/sbt
+ENV PATH ${PATH}:${SBT_HOME}/bin
+RUN curl -sL --retry 3 \
+    "http://dl.bintray.com/sbt/native-packages/sbt/$SBT_VERSION/sbt-$SBT_VERSION.tgz" \
+    | gunzip | tar -x && \
+    cp -a sbt-launcher-packaging-$SBT_VERSION/* /usr/local && \
+    rm -rf sbt-launcher-packaging-$SBT_VERSION && \
+    echo -ne "- with sbt $SBT_VERSION\n" >> /root/.built
 
 # HADOOP
 
@@ -36,14 +28,14 @@ RUN curl -sL --retry 3 \
     "http://archive.apache.org/dist/hadoop/common/hadoop-$HADOOP_VERSION/hadoop-$HADOOP_VERSION.tar.gz" \
     | gunzip \
     | tar -x -C /usr/ && \
-    rm -rf $HADOOP_HOME/share/doc
+    rm -rf $HADOOP_HOME/share/doc && \
+    echo -ne "- with hadoop $HADOOP_VERSION\n" >> /root/.built
 
 # SPARK
 
 ENV SPARK_VERSION 2.0.0
 ENV SPARK_PACKAGE spark-$SPARK_VERSION-bin-without-hadoop
 ENV SPARK_HOME /usr/spark-$SPARK_VERSION
-ENV PYSPARK_PYTHON python3
 ENV SPARK_DIST_CLASSPATH="$HADOOP_HOME/etc/hadoop/*:$HADOOP_HOME/share/hadoop/common/lib/*:$HADOOP_HOME/share/hadoop/common/*:$HADOOP_HOME/share/hadoop/hdfs/*:$HADOOP_HOME/share/hadoop/hdfs/lib/*:$HADOOP_HOME/share/hadoop/hdfs/*:$HADOOP_HOME/share/hadoop/yarn/lib/*:$HADOOP_HOME/share/hadoop/yarn/*:$HADOOP_HOME/share/hadoop/mapreduce/lib/*:$HADOOP_HOME/share/hadoop/mapreduce/*:$HADOOP_HOME/share/hadoop/tools/lib/*"
 ENV PATH $PATH:$SPARK_HOME/bin
 RUN curl -sL --retry 3 \
@@ -51,7 +43,8 @@ RUN curl -sL --retry 3 \
     | gunzip \
     | tar x -C /usr/ && \
     mv /usr/$SPARK_PACKAGE $SPARK_HOME && \
-    rm -rf $SPARK_HOME/examples $SPARK_HOME/ec2
+    rm -rf $SPARK_HOME/examples $SPARK_HOME/ec2 && \
+    echo -ne "- with spark $SPARK_VERSION\n" >> /root/.built
 
 WORKDIR /$SPARK_HOME
 CMD ["bin/spark-class", "org.apache.spark.deploy.master.Master"]

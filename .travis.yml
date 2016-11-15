@@ -12,5 +12,5 @@ script:
 
 env:
   global:
-    - DOCKER_IMAGE_NAME=coorpacademy/docker-pyspark
+    - DOCKER_IMAGE_NAME=coorpacademy/docker-scspark
     - SPARK_VERSION=2.0.0-alpine
