@@ -1,4 +1,4 @@
-FROM docker-scspark:2.0.0-alpine
+FROM coorpacademy/docker-scspark:2.0.0-alpine
 
 # GENERAL DEPENDENCIES
 RUN apk update && \
